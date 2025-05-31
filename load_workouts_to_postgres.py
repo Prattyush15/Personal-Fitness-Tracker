@@ -6,7 +6,7 @@ import numpy as np
 # Database connection settings
 DB_NAME = 'fitness_tracker' # Replace with your db name
 DB_USER = 'fitness_user' # Replace with your actual username
-DB_PASSWORD = 'password!'  # Replace with your actual password
+DB_PASSWORD = 'password'  # Replace with your actual password
 DB_HOST = 'localhost' # Replace with your actual db host
 
 def load_csv_to_db(csv_file, source):

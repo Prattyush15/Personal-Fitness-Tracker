@@ -3,7 +3,9 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 
+
 st.set_page_config(page_title="Personal Fitness Dashboard", layout="wide")
+
 st.title("Personal Fitness Dashboard")
 
 # --- SESSION STATE SETUP ---
@@ -34,7 +36,7 @@ elif st.session_state.step == 'diagnostics':
     st.header("Dashboard & Analysis")
 
     # Sidebar option to select dashboard view
-    dashboard_options = ['Summary', 'Weekly Overview', 'Detailed Analysis', 'Pace & Performance']
+    dashboard_options = ['Custom Insights', 'Weekly Overview', 'Detailed Analysis', 'Pace & Performance']
     selected_dashboard = st.sidebar.selectbox("Select Dashboard View", dashboard_options)
 
     # Retrieve DataFrames from session_state
@@ -116,13 +118,10 @@ elif st.session_state.step == 'diagnostics':
             st.error("Could not find a 'start_date' or 'startDate' column in your data.")
             st.stop()
 
-        df['training_load'] = df['duration_min']
-        df['acute_load'] = df.groupby('activity')['training_load'].transform(lambda x: x.rolling(window=7, min_periods=1).mean())
-        df['chronic_load'] = df.groupby('activity')['training_load'].transform(lambda x: x.rolling(window=28, min_periods=1).mean())
-
-        with np.errstate(divide='ignore', invalid='ignore'):
-            df['acwr'] = df['acute_load'] / df['chronic_load']
-        df['acwr'] = df['acwr'].replace([np.inf, -np.inf], np.nan)
+        # Additional columns
+        for col in ['calories', 'elevation_gain', 'average_heartrate']:
+            if col not in df.columns:
+                df[col] = np.nan
 
         # --- Sidebar Filters ---
         activity_options = ['All'] + sorted(df['activity'].dropna().unique().tolist())
@@ -141,12 +140,20 @@ elif st.session_state.step == 'diagnostics':
         ]
 
         if not filtered_df.empty:
-            # --- Different Dashboard Views ---
-            if selected_dashboard == 'Summary':
-                st.subheader("Summary Dashboard")
-                st.metric("Total Distance (km)", filtered_df['distance_km'].sum().round(2))
-                st.metric("Total Duration (min)", filtered_df['duration_min'].sum().round(2))
-                st.metric("Average Pace (min/km)", filtered_df['pace_min_per_km'].mean().round(2))
+            if selected_dashboard == 'Custom Insights':
+                st.subheader("Customizable Insights")
+                
+                metric_options = {
+                    'Total Distance (km)': filtered_df['distance_km'].sum().round(2),
+                    'Total Duration (min)': filtered_df['duration_min'].sum().round(2),
+                    'Average Pace (min/km)': filtered_df['pace_min_per_km'].mean().round(2),
+                }
+
+                selected_metrics = st.multiselect("Select metrics to display:", options=list(metric_options.keys()), default=list(metric_options.keys())[:3])
+
+                cols = st.columns(len(selected_metrics))
+                for i, metric in enumerate(selected_metrics):
+                    cols[i].metric(metric, metric_options[metric])
 
             elif selected_dashboard == 'Weekly Overview':
                 st.subheader("Weekly Distance (km)")
@@ -156,10 +163,75 @@ elif st.session_state.step == 'diagnostics':
                 st.plotly_chart(fig1)
 
             elif selected_dashboard == 'Detailed Analysis':
-                st.subheader("Acute:Chronic Workload Ratio (ACWR)")
+                st.subheader("Acute: Chronic Workload Ratio (ACWR)")
+                filtered_df['training_load'] = filtered_df['duration_min']
+                filtered_df['acute_load'] = filtered_df.groupby('activity')['training_load'].transform(lambda x: x.rolling(window=7, min_periods=1).mean())
+                filtered_df['chronic_load'] = filtered_df.groupby('activity')['training_load'].transform(lambda x: x.rolling(window=28, min_periods=1).mean())
+
+                with np.errstate(divide='ignore', invalid='ignore'):
+                    filtered_df['acwr'] = filtered_df['acute_load'] / filtered_df['chronic_load']
+                filtered_df['acwr'] = filtered_df['acwr'].replace([np.inf, -np.inf], np.nan)
+
                 if 'acwr' in filtered_df.columns and not filtered_df['acwr'].dropna().empty:
-                    fig2 = px.line(filtered_df.sort_values('start_time'), x='start_time', y='acwr', color='activity', labels={'start_time': 'Date', 'acwr': 'ACWR'})
+                    
+                    st.subheader("ACWR Risk Zones:")
+                    st.markdown("""
+                    - **Blue**: Low Risk (ACWR < 0.8)
+                    - **Green**: Optimal Zone (0.8 <= ACWR <= 1.3)
+                    - **Yellow**: Caution Zone (1.3 < ACWR <= 1.5)
+                    - **Red**: High Risk (ACWR > 1.5)
+                    """)
+
+                    mean_acwr = filtered_df['acwr'].mean()
+                    if mean_acwr < 0.8:
+                        acwr_message = ("Your average ACWR is {:.2f}. You may be undertraining. Consider gradually increasing your training load to maintain fitness.").format(mean_acwr)
+                    elif 0.8 <= mean_acwr <= 1.3:
+                        acwr_message = ("Your average ACWR is {:.2f}. This is considered optimal for training adaptation and injury prevention.").format(mean_acwr)
+                    elif 1.3 < mean_acwr <= 1.5:
+                        acwr_message = ("Your average ACWR is {:.2f}. You are entering a slightly high risk zone. Monitor fatigue levels and plan rest days.").format(mean_acwr)
+                    else:
+                        acwr_message = ("Your average ACWR is {:.2f}. This is considered high risk for injury. It’s advisable to reduce workload and prioritize recovery.").format(mean_acwr)
+
+                    st.markdown(f"""
+                        <div style="font-size: 16px; color: white;">
+                            <span style="font-size:24px;">ACWR Analysis:</span> {acwr_message}
+                        </div>
+                    """, unsafe_allow_html=True)
+
+                    fig2 = px.line(
+                        filtered_df.sort_values('start_time'),
+                        x='start_time',
+                        y='acwr',
+                        color='activity',
+                        labels={'start_time': 'Date', 'acwr': 'ACWR'},
+                        line_shape='linear'
+                    )
+
+                    # Color coding ACWR risk zones
+                    for i, row in filtered_df.iterrows():
+                        acwr_value = row['acwr']
+                        if pd.isna(acwr_value):
+                            continue
+                        elif acwr_value < 0.8:
+                            color = 'blue'
+                        elif 0.8 <= acwr_value <= 1.3:
+                            color = 'green'
+                        elif 1.3 < acwr_value <= 1.5:
+                            color = 'yellow'
+                        else:
+                            color = 'red'
+
+                        fig2.add_scatter(
+                            x=[row['start_time']],
+                            y=[acwr_value],
+                            mode='markers',
+                            marker=dict(color=color, size=8),
+                            showlegend=False
+                        )
+
+
                     st.plotly_chart(fig2)
+
                 else:
                     st.info("Not enough data to calculate ACWR.")
 
