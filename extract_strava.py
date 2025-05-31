@@ -2,12 +2,14 @@ import os
 import requests
 import pandas as pd
 
-# Fill in your credentials below
-CLIENT_ID = '162383'
-CLIENT_SECRET = '630738fcd7c7f63ec72e13d70b97f6410c29e4ca'
-CODE = '2fea5604f2851128b31da060f9a34408355aeb5a'  # Only needed for first token exchange
-REDIRECT_URI = 'http://localhost'
-ACCESS_TOKEN = '0d5acdb7da6cb68e68f19c436969d1411aa906b1'  # Use the new token after exchange
+# Fill in your credentials below, do not share thes publicly
+# These values should be obtained from your Strava app settings
+CLIENT_ID = 'client_id_here'  # Replace with your actual Strava client ID
+CLIENT_SECRET = 'client_secret_here'  # Replace with your actual Strava client secret
+CODE = 'code_here'  # Replace with the authorization code you received after logging in
+REDIRECT_URI = 'http://localhost'  # Replace with your redirect URI, must match the one used in Strava app settings
+# After exchanging the code, you will receive an access token
+ACCESS_TOKEN = 'access_token_here'  # Replace with the access token you received after exchanging the code
 
 
 def exchange_code_for_token(client_id, client_secret, code, redirect_uri):
