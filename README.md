@@ -79,6 +79,7 @@ This app uses ARIMA modeling to forecast your weekly distance for the next 12 we
 - pandas
 - numpy
 - plotly
+- matplotlib
 - statsmodels
 - streamlit
 
