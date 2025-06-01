@@ -6,10 +6,10 @@ import statsmodels.api as sm
 import matplotlib.pyplot as plt
 
 
-st.set_page_config(page_title="Personal Fitness Dashboard", layout="wide")
+st.set_page_config(page_title="StravaViz", page_icon= "stravavizicon.png", layout="wide")
 
 
-st.title("Personal Fitness Dashboard")
+st.title("StravaViz: Visualize. Analyze. Improve.")
 
 # --- SESSION STATE SETUP ---
 if 'step' not in st.session_state:
