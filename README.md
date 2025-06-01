@@ -25,12 +25,12 @@ This is an interactive Streamlit application that allows you to visualize and an
    pip install -r requirements.txt
 
 3. Run the app:
-   ```bash
-   streamlit run fitness_dashboard.py
+      ```bash
+      streamlit run fitness_dashboard.py
 
    Might have to use the following command instead:
-   ```bash
-   python -m streamlit run fitness_dashboard.py
+      ```bash
+      python -m streamlit run fitness_dashboard.py
 
 4. Upload your Strava .csv file and start exploring your data!
 
