@@ -36,7 +36,7 @@ if st.session_state.step == 'upload':
 # --- SCREEN 2: DIAGNOSTICS ---
 elif st.session_state.step == 'diagnostics':
     # Sidebar option to select dashboard view
-    dashboard_options = ['Custom Insights', 'Weekly Overview', 'Detailed Analysis', 'Pace & Performance', 'Forecasting', 'Training Tips','Help / FAQ']
+    dashboard_options = ['Home', 'Custom Insights', 'Weekly Overview', 'Detailed Analysis', 'Pace & Performance', 'Forecasting', 'Training Tips','Help / FAQ']
     selected_dashboard = st.sidebar.selectbox("Select Dashboard View", dashboard_options)    
 
 
@@ -135,7 +135,42 @@ elif st.session_state.step == 'diagnostics':
                 filtered_df = filtered_df[filtered_df['activity'] == selected_activity]
 
         if not filtered_df.empty:
-            if selected_dashboard == 'Custom Insights':
+            if selected_dashboard == 'Home':
+                st.subheader("Home Dashboard")
+                st.markdown("""
+                Welcome to your Personal Fitness Dashboard! Here’s a quick guide to the different sections and what you’ll find in each:
+                
+                - **Custom Insights:**  
+                Choose and view key metrics like distance, duration, pace, elevation gain, and more. Select specific metrics you care about to customize your view.
+
+                - **Weekly Overview:**  
+                See how your weekly distance and elevation gain trend over time. This helps you spot consistency and adjust your training plan accordingly.  
+                (Tip: You can drag and zoom into the graphs for a closer look.)
+
+                - **Detailed Analysis:**  
+                Analyze your Acute:Chronic Workload Ratio (ACWR) to assess your training load balance. Color-coded risk zones help you manage injury risk.
+
+                - **Pace & Performance:**  
+                Visualize your pace distribution across activities. This helps you understand your performance levels and pacing strategy.
+
+                - **Training Tips:**  
+                Get personalized training tips based on your age and your Strava data. Recommendations cover progression, pace, and consistency.
+
+                - **Help / FAQ:**  
+                Find explanations for key terms like ACWR, pace, and training load. Understand what each metric means and how to use it to improve your training.
+
+                Each dashboard is interactive, and you can filter by activity type and date range to focus on what matters most.  
+                """)
+
+                st.info("Use the sidebar to navigate to each dashboard and dive deeper into your training data.")
+
+                st.markdown("**Note:** If you want to go back to the upload screen, click the button below.")
+                if st.button("Go Back"):
+                    st.session_state.step = 'upload'
+                    st.rerun()
+
+
+            elif selected_dashboard == 'Custom Insights':
                 st.subheader("Customizable Insights")
 
                 # Calculate metrics dynamically
@@ -174,11 +209,47 @@ elif st.session_state.step == 'diagnostics':
                     st.info("Please select at least one metric to display.")
 
             elif selected_dashboard == 'Weekly Overview':
-                st.subheader("Weekly Distance (km)")
+                # Calculate weekly metrics
                 filtered_df['week'] = filtered_df['start_time'].dt.to_period('W').apply(lambda r: r.start_time)
-                weekly = filtered_df.groupby('week')['distance_km'].sum().reset_index()
-                fig1 = px.bar(weekly, x='week', y='distance_km', labels={'week': 'Week', 'distance_km': 'Distance (km)'})
+                weekly_stats = filtered_df.groupby('week').agg({
+                    'distance_km': 'sum',
+                    'duration_min': 'sum',
+                    'total_elevation_gain': 'sum',
+                    'pace_min_per_km': 'mean',
+                    'start_time': 'count'
+                }).reset_index()
+                weekly_stats.rename(columns={'start_time': 'activity_count'}, inplace=True)
+                
+                # Fig1 shows weekly distance
+                st.subheader("Weekly Distance (km)")
+                fig1 = px.bar(weekly_stats, x='week', y='distance_km', labels={'week': 'Week', 'distance_km': 'Distance (km)'})
                 st.plotly_chart(fig1)
+
+                
+                # Plot activity count per week
+                st.subheader("Number of Activities per Week")
+                fig2 = px.bar(weekly_stats, x='week', y='activity_count', labels={'week': 'Week', 'activity_count': 'Activities'})
+                st.plotly_chart(fig2)
+
+                # Plot weekly elevation gain
+                st.subheader("Weekly Elevation Gain (m)")
+                fig3 = px.bar(weekly_stats, x='week', y='total_elevation_gain', labels={'week': 'Week', 'total_elevation_gain': 'Elevation Gain (m)'})
+                st.plotly_chart(fig3)
+
+                # Plot average pace per week
+                st.subheader("Average Pace per Week (min/km)")
+                fig4 = px.line(weekly_stats, x='week', y='pace_min_per_km', labels={'week': 'Week', 'pace_min_per_km': 'Avg Pace (min/km)'})
+                st.plotly_chart(fig4)
+
+                # Rolling average (4-week)
+                weekly_stats['rolling_distance'] = weekly_stats['distance_km'].rolling(window=4, min_periods=1).mean()
+
+                # Plot weekly distance with rolling average
+                st.subheader("Weekly Distance with 4-Week Rolling Average (km)")
+                fig5 = px.bar(weekly_stats, x='week', y='distance_km', labels={'week': 'Week', 'distance_km': 'Distance (km)'})
+                fig5.add_scatter(x=weekly_stats['week'], y=weekly_stats['rolling_distance'], mode='lines', name='4-Week Avg', line=dict(color='red'))
+
+                st.plotly_chart(fig5)
 
             elif selected_dashboard == 'Detailed Analysis':
                 st.subheader("Acute: Chronic Workload Ratio (ACWR)")
@@ -412,9 +483,5 @@ elif st.session_state.step == 'diagnostics':
             st.warning("No data matches the selected filters.")
     else:
         st.info("No data to display. Please upload files on the Upload tab.")
-
-    if st.button("Go Back"):
-        st.session_state.step = 'upload'
-        st.rerun()
 
 st.markdown("**Made by Prattyush Giriraj**")
