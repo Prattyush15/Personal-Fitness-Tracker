@@ -25,6 +25,19 @@ if st.session_state.step == 'upload':
     user_age = st.number_input("Enter your age:", min_value=10, max_value=100, value=30)
     if user_age:
         st.session_state.user_age = user_age
+    
+    st.markdown("""
+    **Don't have a Strava CSV file yet?**  
+    Click the button below to load a sample dataset and explore all the features of the dashboard.
+    """)
+
+    if st.button("Use Sample Data"):
+        sample_file_path = "strava_activities.csv"  # My .csv file path
+        st.session_state.strava_df = pd.read_csv(sample_file_path)
+        st.session_state.user_age = 21  # Hardcoded sample age
+        st.success("Sample data loaded successfully.")
+        st.session_state.step = 'diagnostics'
+        st.rerun()
 
     if strava_file:
         st.session_state.strava_df = pd.read_csv(strava_file)
