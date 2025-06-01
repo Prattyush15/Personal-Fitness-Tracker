@@ -439,9 +439,60 @@ elif st.session_state.step == 'diagnostics':
                 """)
 
             elif selected_dashboard == 'Pace & Performance':
-                st.subheader("Pace Distribution")
-                fig3 = px.histogram(filtered_df, x='pace_min_per_km', nbins=20, labels={'pace_min_per_km': 'Pace (min/km)'})
+                # Pace Distribution Histogram
+                st.markdown("### Pace Distribution (min/km)")
+                fig3 = px.histogram(filtered_df, x='pace_min_per_km', nbins=20,
+                                    labels={'pace_min_per_km': 'Pace (min/km)'},
+                                    title="Histogram of Pace")
                 st.plotly_chart(fig3)
+
+
+                # Heatmap of Pace by Day of Week and Hour
+                st.markdown("### Heatmap of Pace by Day of Week and Hour")
+                filtered_df['day_of_week'] = filtered_df['start_time'].dt.day_name()
+                filtered_df['hour_of_day'] = filtered_df['start_time'].dt.hour
+                heatmap_data = (
+                    filtered_df.groupby(['day_of_week', 'hour_of_day'])['pace_min_per_km']
+                    .mean()
+                    .reset_index()
+                )
+                day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                heatmap_data['day_of_week'] = pd.Categorical(heatmap_data['day_of_week'], categories=day_order, ordered=True)
+                heatmap_data = heatmap_data.sort_values(['day_of_week', 'hour_of_day'])
+                heatmap_pivot = heatmap_data.pivot(index='day_of_week', columns='hour_of_day', values='pace_min_per_km')
+                fig4 = px.imshow(
+                    heatmap_pivot,
+                    labels=dict(x="Hour of Day", y="Day of Week", color="Avg Pace (min/km)"),
+                    aspect="auto",
+                    color_continuous_scale="Blues",
+                    text_auto=True
+                )
+                st.plotly_chart(fig4)
+
+                # Scatter plot of Pace vs Distance
+                st.markdown("### Scatter Plot of Distance vs. Pace")
+                fig5 = px.scatter(
+                    filtered_df,
+                    x='distance_km',
+                    y='pace_min_per_km',
+                    color='activity',
+                    labels={'distance_km': 'Distance (km)', 'pace_min_per_km': 'Pace (min/km)'},
+                    title="Pace vs. Distance"
+                )
+                st.plotly_chart(fig5)
+
+                # Line Chart of Average Weekly Pace
+                st.markdown("### Average Weekly Pace Trend")
+                filtered_df['week'] = filtered_df['start_time'].dt.to_period('W').apply(lambda r: r.start_time)
+                weekly_pace = filtered_df.groupby('week')['pace_min_per_km'].mean().reset_index()
+                fig6 = px.line(
+                    weekly_pace,
+                    x='week',
+                    y='pace_min_per_km',
+                    labels={'week': 'Week', 'pace_min_per_km': 'Avg Pace (min/km)'},
+                    title="Weekly Average Pace"
+                )
+                st.plotly_chart(fig6)
 
             elif selected_dashboard == 'Training Tips':
                 st.subheader("Training Tips Based on Your Strava Data")
@@ -528,28 +579,35 @@ elif st.session_state.step == 'diagnostics':
                 st.subheader("Help / FAQ")
 
                 st.markdown("""
-                **Key Concepts:**
+                **Key Analytical Concepts Explained:**  
 
                 - **ACWR (Acute: Chronic Workload Ratio)**  
-                Compares your short-term training load to your long-term load. It helps you balance training intensity and avoid injury risk.
+                    This metric compares your recent training load (short-term, typically 7 days) to your longer-term training load (28 days).  
+                    - A value below 0.8 may indicate undertraining.  
+                    - A value between 0.8 and 1.3 is considered optimal for balancing fitness and recovery.  
+                    - A value above 1.5 may increase the risk of injury due to overtraining.
 
-                - **Training Load**  
-                Measures your activity volume, often in minutes. It helps track how much work you’re doing.
+                - **Rolling Average and Standard Deviation (ACWR)**  
+                    A rolling average smooths out short-term fluctuations and helps reveal long-term trends in your ACWR, making it easier to spot consistent patterns or sudden spikes.  
+                    - The standard deviation shows how much your ACWR varies over time—a high value may indicate inconsistent training, which could raise injury risk.
+
+                - **ARIMA Forecasting**  
+                    An advanced statistical model that predicts future weekly distance based on past training data. This can help you plan future workouts and avoid overtraining.  
+                    - Forecasting helps identify expected training volume and supports more structured training plans.
 
                 - **Pace (min/km)**  
-                The time it takes you to cover one kilometer. A lower pace means you’re faster.
+                    This measures the time it takes you to complete one kilometer.  
+                    - Lower values mean faster runs; higher values mean slower runs.  
+                    - The histogram and scatter plots in the dashboard show how your pace is distributed and how it varies with other factors like distance and time of day.
 
-                - **ACWR Risk Zones:**  
-                    - **Low (<0.8):** May indicate undertraining.  
-                    - **Optimal (0.8-1.3):** Balanced training.  
-                    - **Caution (1.3-1.5):** Increased risk of fatigue or injury.  
-                    - **High (>1.5):** High risk of injury. Reduce intensity and prioritize recovery.
+                - **Heatmap of Pace by Day and Hour**  
+                    Shows how your pace varies by day of the week and hour of the day. This can help you understand which times you typically train faster or slower.
 
-                - **Weekly Overview:**  
-                Shows how your training load changes weekly to spot patterns.
-
-                - **Custom Insights:**  
-                Lets you pick and compare metrics like distance, duration, and pace.
+                - **Interactive Plots**  
+                    All graphs in the dashboard are interactive:  
+                    - **Drag and Zoom:** Click and drag to zoom into a specific date range or detail.  
+                    - **Hover:** Hover over points to see exact values.  
+                    - **Legend Toggle:** Click on legends to hide or show specific data series.
 
                 Use this dashboard to better understand your workouts and plan your training smarter! 
                 """)
