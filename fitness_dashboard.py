@@ -20,6 +20,13 @@ if st.session_state.step == 'upload':
     st.header("Upload your data files")
     st.markdown("Upload your Strava CSV file to get started.")
 
+    st.markdown(
+    """
+    [Read the README file here to learn how to download your own Strava CSV file and other instructions as well!](https://github.com/Prattyush15/StravaViz)
+    """,
+    unsafe_allow_html=True
+    )
+
     strava_file = st.file_uploader("Upload Strava Activities CSV", type=['csv'])
 
     user_age = st.number_input("Enter your age:", min_value=10, max_value=100, value=30)
