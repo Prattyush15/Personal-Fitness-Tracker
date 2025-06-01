@@ -2,6 +2,8 @@
 
 This is an interactive Streamlit application that allows you to visualize and analyze your personal fitness data from Strava. It supports uploading your `.csv` activity data, provides customizable insights, forecasts future training trends, and offers personalized tips based on your training data and age. I have provided a `.csv` file to use as an example.
 
+You can now access this dashboard here: https://stravaanalysis.streamlit.app/
+
 ## Features
 
 - Data Upload: Import your Strava `.csv` files easily.
