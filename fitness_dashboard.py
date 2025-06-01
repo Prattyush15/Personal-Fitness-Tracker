@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 import statsmodels.api as sm
+import matplotlib.pyplot as plt
 
 
 st.set_page_config(page_title="Personal Fitness Dashboard", layout="wide")
@@ -36,7 +37,7 @@ if st.session_state.step == 'upload':
 # --- SCREEN 2: DIAGNOSTICS ---
 elif st.session_state.step == 'diagnostics':
     # Sidebar option to select dashboard view
-    dashboard_options = ['Home', 'Custom Insights', 'Weekly Overview', 'Detailed Analysis', 'Pace & Performance', 'Forecasting', 'Training Tips','Help / FAQ']
+    dashboard_options = ['Home', 'Custom Insights', 'Weekly Overview', 'Detailed Analysis', 'Pace & Performance', 'Training Tips','Help / FAQ']
     selected_dashboard = st.sidebar.selectbox("Select Dashboard View", dashboard_options)    
 
 
@@ -324,14 +325,8 @@ elif st.session_state.step == 'diagnostics':
                 else:
                     st.info("Not enough data to calculate ACWR.")
 
-            elif selected_dashboard == 'Pace & Performance':
-                st.subheader("Pace Distribution")
-                fig3 = px.histogram(filtered_df, x='pace_min_per_km', nbins=20, labels={'pace_min_per_km': 'Pace (min/km)'})
-                st.plotly_chart(fig3)
-
-            elif selected_dashboard == 'Forecasting':
-                st.subheader("Distance Forecasting")
-
+                #--- ARIMA Forecasting ---
+                st.subheader("ARIMA Forecasting of Weekly Distance")
                 try:
                     # Calculate weekly distance
                     filtered_df['week'] = filtered_df['start_time'].dt.to_period('W').apply(lambda r: r.start_time)
@@ -355,7 +350,7 @@ elif st.session_state.step == 'diagnostics':
                         })
 
                         # Plot
-                        fig = px.line(weekly_distance, x='week', y='distance_km', title='Weekly Distance with ARIMA Forecast')
+                        fig = px.line(weekly_distance, x='week', y='distance_km')
                         fig.add_scatter(x=forecast_df['week'], y=forecast_df['forecast_distance_km'], mode='lines+markers', name='Forecast')
 
                         fig.update_layout(xaxis_title='Week', yaxis_title='Distance (km)')
@@ -368,6 +363,85 @@ elif st.session_state.step == 'diagnostics':
                 except Exception as e:
                     st.warning(f"Forecasting failed: {e}")
 
+                # Rolling average and standard deviation of ACWR
+                st.subheader("Rolling Average and Standard Deviation of ACWR")
+                # Calculate rolling mean and standard deviation
+                filtered_df['rolling_acwr'] = filtered_df['acwr'].rolling(window=7, min_periods=1).mean()
+                filtered_df['acwr_std'] = filtered_df['acwr'].rolling(window=7, min_periods=1).std()
+
+                # Plot
+                fig99, ax = plt.subplots(figsize=(10, 5))
+                ax.plot(filtered_df['start_time'], filtered_df['acwr'], color='lightgray', label='ACWR (Daily)')
+                ax.plot(filtered_df['start_time'], filtered_df['rolling_acwr'], color='blue', label='7-Day Rolling Mean')
+                ax.fill_between(filtered_df['start_time'],
+                                filtered_df['rolling_acwr'] - filtered_df['acwr_std'],
+                                filtered_df['rolling_acwr'] + filtered_df['acwr_std'],
+                                color='blue', alpha=0.2, label='±1 Std Dev')
+                ax.set_xlabel("Date")
+                ax.set_ylabel("ACWR")
+                ax.legend()
+                ax.grid(True, alpha=0.3)
+                st.pyplot(fig99)
+
+                # Analysis
+                mean_rolling_acwr = filtered_df['rolling_acwr'].mean()
+                std_rolling_acwr = filtered_df['acwr_std'].mean()
+
+                st.markdown(f"""
+                **Rolling ACWR Analysis:**
+                - The **average rolling ACWR** is **{mean_rolling_acwr:.2f}**, indicating your overall training load balance.
+                - The **average standard deviation** is **{std_rolling_acwr:.2f}**, which shows how variable your ACWR has been.
+                - A high standard deviation may signal inconsistent training loads that could increase injury risk.
+                """)
+
+
+                # Injury Risk Alerts
+                st.subheader("Injury Risk Alerts")
+
+                high_risk = filtered_df[filtered_df['acwr'] > 1.5]
+                low_risk = filtered_df[filtered_df['acwr'] < 0.8]
+
+                if not high_risk.empty:
+                    st.warning(f"High Risk Periods Detected: {high_risk['start_time'].dt.date.min()} to {high_risk['start_time'].dt.date.max()}.")
+                if not low_risk.empty:
+                    st.info(f"Low Risk Periods Detected: {low_risk['start_time'].dt.date.min()} to {low_risk['start_time'].dt.date.max()}.")
+                if high_risk.empty and low_risk.empty:
+                    st.success("No significant high or low risk periods detected!")
+
+                # Summary Analysis
+                st.markdown("""
+                **Injury Risk Analysis Summary:**
+                - Regularly hitting high risk periods can increase your risk of injury. If you have frequent high-risk periods, consider reducing intensity or increasing rest days.
+                - Low risk periods could mean your training is too light to drive performance gains. Consider gradually increasing load if needed.
+                """)
+
+                #--- ACWR by Activity Type ---
+                st.subheader("ACWR by Activity Type")
+
+                fig2 = px.line(
+                    filtered_df.sort_values('start_time'),
+                    x='start_time',
+                    y='acwr',
+                    color='activity',
+                    labels={'start_time': 'Date', 'acwr': 'ACWR'}
+                )
+                st.plotly_chart(fig2)
+
+                # Analysis
+                acwr_means_by_activity = filtered_df.groupby('activity')['acwr'].mean().sort_values(ascending=False)
+                top_activity = acwr_means_by_activity.index[0]
+                top_value = acwr_means_by_activity.iloc[0]
+
+                st.markdown(f"""
+                **Activity Type ACWR Analysis:**
+                - The activity with the **highest average ACWR** is **{top_activity}** at **{top_value:.2f}**. This may be where you’re most at risk of overtraining.
+                - Balancing load across different activities can help manage injury risk and improve overall performance.
+                """)
+
+            elif selected_dashboard == 'Pace & Performance':
+                st.subheader("Pace Distribution")
+                fig3 = px.histogram(filtered_df, x='pace_min_per_km', nbins=20, labels={'pace_min_per_km': 'Pace (min/km)'})
+                st.plotly_chart(fig3)
 
             elif selected_dashboard == 'Training Tips':
                 st.subheader("Training Tips Based on Your Strava Data")
