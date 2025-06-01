@@ -89,3 +89,9 @@ This app uses ARIMA modeling to forecast your weekly distance for the next 12 we
 - Currently supports Strava data only.
 - Please ensure your .csv file contains columns like distance, moving_time, start_date, and type.
 - The app is designed for personal use and should not replace advice from a qualified coach or medical professional.
+
+## Images
+![image](https://github.com/user-attachments/assets/ebadac3e-cb98-43c0-b9ad-2fba66de1d47)
+![image](https://github.com/user-attachments/assets/3b219b9d-c455-4831-af3f-8ee2de637ca3)
+![image](https://github.com/user-attachments/assets/b8305d67-6f99-4d33-829d-97f5b82fef98)
+
