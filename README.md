@@ -1,4 +1,4 @@
-# Personal Fitness Dashboard
+# StravaViz
 
 This is an interactive Streamlit application that allows you to visualize and analyze your personal fitness data from Strava. It supports uploading your `.csv` activity data, provides customizable insights, forecasts future training trends, and offers personalized tips based on your training data and age. I have provided a `.csv` file to use as an example and it can be accessed through the app by pressing the "Use Sample Data" button on the upload page!
 
