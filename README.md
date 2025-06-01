@@ -1,21 +1,24 @@
 # Personal Fitness Dashboard
 
-This is an interactive Streamlit application that allows you to visualize and analyze your personal fitness data from Strava. It supports uploading your `.csv` activity data, provides customizable insights, forecasts future training trends, and offers personalized tips based on your training data and age. I have provided a `.csv` file to use as an example.
+This is an interactive Streamlit application that allows you to visualize and analyze your personal fitness data from Strava. It supports uploading your `.csv` activity data, provides customizable insights, forecasts future training trends, and offers personalized tips based on your training data and age. I have provided a `.csv` file to use as an example and it can be accessed through the app by pressing the "Use Sample Data" button on the upload page!
 
 You can now access this dashboard here: https://stravaanalysis.streamlit.app/
 
 ## Features
 
 - Data Upload: Import your Strava `.csv` files easily.
-- Custom Insights: Select metrics like total distance, average pace, and more.
-- Weekly Overview: Visualize weekly training patterns.
-- Detailed Analysis: Explore acute-to-chronic workload ratio (ACWR) with risk zone insights.
-- Pace & Performance: Analyze your pace distribution.
-- Forecasting: Use ARIMA models to forecast future weekly distances.
-- Training Tips: Get personalized advice based on your age and training data.
-- Help / FAQ: Understand key concepts like ACWR, training load, and more.
+- Custom Insights: Choose and view key training metrics like total distance, average pace, elevation gain, and more.
+- Weekly Overview: Visualize your weekly distance, activity count, elevation gain, and pace trends.
+- Detailed Analysis: Dive into your training load with the Acute:Chronic Workload Ratio (ACWR), risk zone highlights, rolling averages, and injury risk alerts.
+- Pace & Performance: Explore your pace distribution, see pace vs. distance relationships, and track average weekly pace.
+- Training Tips: Receive personalized recommendations based on your age and training trends to optimize performance and reduce injury risk.
+- Help / FAQ: Find detailed explanations of key metrics like ACWR, training load, rolling averages, and more.
 
 ## How to Use
+
+Simply use: https://stravaanalysis.streamlit.app/
+
+## How to use locally
 
 1. Clone this repository:
    ```bash
@@ -72,11 +75,8 @@ https://www.strava.com/oauth/authorize?client_id=YOUR_CLIENT_ID&response_type=co
 
 ### 5. Upload to the App
 - In the app, upload your strava_activities.csv file to get started with analysis!
- 
-## Forecasting
-This app uses ARIMA modeling to forecast your weekly distance for the next 12 weeks. The forecast can help you plan your training and avoid sudden spikes that might lead to injuries.
 
-## Requirements
+## Requirements to run locally
 - Python 3.8+
 - pandas
 - numpy
